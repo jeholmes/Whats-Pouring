@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">What\'s Pouring?</string>
+    <string name="title_activity_maps">What\'s Pouring?</string>
+    <string name="brewery_logo">brewery logo</string>
+    <string name="title_activity_splash">SplashActivity</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+</resources>
