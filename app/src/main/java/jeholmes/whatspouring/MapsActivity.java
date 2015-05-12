@@ -1,6 +1,5 @@
 package jeholmes.whatspouring;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.view.View;
@@ -64,7 +63,7 @@ public class MapsActivity extends FragmentActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-        Thread welcomeThread = new Thread() {
+        /*Thread welcomeThread = new Thread() {
 
             @Override
             public void run() {
@@ -82,7 +81,7 @@ public class MapsActivity extends FragmentActivity {
                 }
             }
         };
-        welcomeThread.start();
+        welcomeThread.start();*/
 
         scrapeThread.start();
 

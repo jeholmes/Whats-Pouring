@@ -4,7 +4,9 @@ import android.support.v4.app.FragmentActivity;
 
 /**
  * Created by Jon on 12/05/2015.
+ * Acts as loading screen for app
  */
+
 public class SplashActivity extends FragmentActivity {
-    
+
 }
