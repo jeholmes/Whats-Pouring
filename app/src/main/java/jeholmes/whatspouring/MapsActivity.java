@@ -69,13 +69,13 @@ public class MapsActivity extends FragmentActivity {
             public void run() {
                 try {
                     super.run();
-                    sleep(10000)  //Delay of 10 seconds
+                    sleep(1000);  //Delay of 10 seconds
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
 
-                    Intent i = new Intent(SplashActivity.this,
-                            MapsActivity.class);
+                    Intent i = new Intent(MapsActivity.this,
+                            Splash.class);
                     startActivity(i);
                     finish();
                 }
@@ -122,25 +122,27 @@ public class MapsActivity extends FragmentActivity {
         }
     }
 
-    private String[] breweries = {  "Powell Street Craft Brewery",  "Strange Fellows Brewing",  "Parallel 49 Brewing"   };
-    private String[] addresses = {  "1357 Powell Street",           "1345 Clark Drive",         "1950 Triumph Street"};
-    private String[] urls = {"http://www.powellbeer.com/?_escaped_fragment_=beers/cee5", "http://strangefellowsbrewing.com/", "http://parallel49brewing.com/beers/"};
-    private String[] listDOMid = {  "#i325kxr3",                    "#beers",                    "div.always_around"};
-    private String[] listContainer = {"li",                         "div.beer > div.inner",      "div.beer-list > div.beer > h2"};
-    private String[] listSecondary = {"",                            "",                         "div.beer-list > div.beer > p.intro"};
-    private String[] iconAssets = {"pscb.png","sf.png","p49.png"};
+    private String[] breweries = {  "Powell Street Craft Brewery",  "Strange Fellows Brewing",  "Parallel 49 Brewing",  "Storm Brewing", "Bomber Brewing"   };
+    private String[] addresses = {  "1357 Powell Street, Vancouver",           "1345 Clark Drive, Vancouver",         "1950 Triumph Street, Vancouver",  "310 Commercial Drive, Vancouver", "1488 Adanac Street, Vancouver"};
+    private String[] urls = {"http://www.powellbeer.com/?_escaped_fragment_=beers/cee5", "http://strangefellowsbrewing.com/", "http://parallel49brewing.com/beers/", "http://www.stormbrewing.org/?_escaped_fragment_=thebeers/csgz", "http://www.bomberbrewing.com/beers#brewery-54"};
+    private String[] listDOMid = {  "#i325kxr3",                    "#beers",                    "div.always_around", "#i4nv7xib", "div.view-brewery"};
+    private String[] listContainer = {"li",                         "div.beer > div.inner",      "div.beer-list > div.beer > h2", "p.font_8 > span > span", "div.views-row > div.node-beer > div.row-fluid > div.span8 > div.field-name-title"};
+    private String[] listSecondary = {"",                            "",                         "div.beer-list > div.beer > p.intro", "", ""};
+    private String[] iconAssets = {"pscb.png",                      "sf.png",                      "p49.png",   "storm.png", "bomber.png"};
 
-    private String[] beers = {"","",""};
-    private double[] lats = {0,0,0};
-    private double[] longs = {0,0,0};
+    private String[] beers = {"","","", "", ""};
+    private double[] lats = {0,0,0,0,0};
+    private double[] longs = {0,0,0,0,0};
 
     private volatile boolean scrapeFinished = false;
 
     final Object LOCK = new Object();
 
+    int totalBreweries = 4; //breweries.length
+
     public JSONObject getLocationInfo(String address) {
 
-        address = address + ", Vancouver, BC, Canada";
+        address = address + ", BC, Canada";
         address = address.replaceAll(" ","+");
 
         HttpGet httpGet = new HttpGet("http://maps.googleapis.com/maps/api/geocode/json?address="+address+"&sensor=true");
@@ -171,11 +173,14 @@ public class MapsActivity extends FragmentActivity {
     Thread scrapeThread = new Thread() {
         public void run() {
 
-            for (int i = 0; i < breweries.length; i++) {
+            for (int i = 0; i < totalBreweries; i++) {
+
+                //Log.v("iterator", "starting processing for brewery " + i);
 
                 Document document = null;
                 try {
 
+                    //Log.v("iterator", "trying to get coord for " + i);
                     JSONObject ret = getLocationInfo(addresses[i]);
 
                     JSONObject location;
@@ -194,21 +199,20 @@ public class MapsActivity extends FragmentActivity {
                     lats[i] = lat_val;
                     longs[i] = long_val;
 
-                    document = Jsoup.connect(urls[i]).get();
+                    //Log.v("iterator", "trying to get webpage for " + i);
+                    while (document==null) {
+                        document = Jsoup.connect(urls[i]).get();
+                    }
 
+                    //Log.v("iterator", "connection success for " + i);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
+                //Log.v("iterator", "asserting document for pointer " + i);
                 assert document != null;
-               // assert coords != null;
 
-               // Log.v("Test",coords.size() + " entries");
-
-               // Log.v("Test",coords.get(0).getLatitude() + " lat");
-               // Log.v("Test",coords.get(0).getLongitude() + " long");
-
-                //lats[i] = coords.get(0).getLatitude();
-                //longs[i] = coords.get(0).getLongitude();
+                //Log.v("dump", document.toString());
 
                 Elements listDOM = document.select(listDOMid[i]);
                 Elements beerDOMs = listDOM.select(listContainer[i]);
@@ -221,6 +225,7 @@ public class MapsActivity extends FragmentActivity {
                 String returnStr = "\n";
 
                 for( Element beerDOM : beerDOMs) {
+
                     if (beerDOM.text().length() > 0) {
                         returnStr += "\u2022 " + beerDOM.text();
 
@@ -230,6 +235,10 @@ public class MapsActivity extends FragmentActivity {
                             j++;
                         }
                         returnStr += "\n";
+
+                        if (beerDOM.text().equals("BRAINSTORMS")) { // Bandage for Storm's website
+                            break;
+                        }
                     }
                 }
 
@@ -263,7 +272,7 @@ public class MapsActivity extends FragmentActivity {
             }
         }
 
-        for (int i = 0; i < breweries.length; i++) {
+        for (int i = 0; i < totalBreweries; i++) {
             mMap.addMarker(new MarkerOptions()
                     .position(new LatLng(lats[i], longs[i]))
                     .title(breweries[i])
@@ -272,8 +281,8 @@ public class MapsActivity extends FragmentActivity {
             latAvg += lats[i];
             longAvg += longs[i];
         }
-        latAvg = latAvg / breweries.length;
-        longAvg = longAvg / breweries.length;
+        latAvg = latAvg / totalBreweries;
+        longAvg = longAvg / totalBreweries;
 
         mMap.moveCamera( CameraUpdateFactory.newLatLngZoom(new LatLng(latAvg, longAvg), 14.5f) );
     }
