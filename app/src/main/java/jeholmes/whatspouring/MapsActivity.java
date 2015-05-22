@@ -3,6 +3,9 @@ package jeholmes.whatspouring;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -12,21 +15,6 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
-import java.io.IOException;
-import java.io.InputStream;
 
 public class MapsActivity extends FragmentActivity {
 
@@ -58,32 +46,95 @@ public class MapsActivity extends FragmentActivity {
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
 
+    private static String[] wheatTerms = {"wheat","hefeweizen","wit","blonde"};
+    private static String[] lagerTerms = {"lager","pilsner","kolsch","marzen","helles"};
+    private static String[] paleTerms = {"pale", "IPA", "india", "I.P.A"};
+    private static String[] bitterTerms = {"bitter", "ESB", "E.S.B"};
+    private static String[] belgianTerms = {"belgian", "saison", "dubbel", "tripel", "quad", "white"};
+    private static String[] amberTerms = {"amber", "ruby"};
+    private static String[] brownTerms = {"brown", "altbier", "classic"};
+    private static String[] porterTerms = {"porter", "stout"};
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-        /*Thread welcomeThread = new Thread() {
+        Bundle extras = getIntent().getExtras();
 
+        totalBreweries = extras.getInt("total");
+
+        markers = new Marker[totalBreweries];
+
+        breweries = extras.getStringArrayList("nameArr").toArray(new String[totalBreweries]);
+        //addresses = extras.getStringArrayList("addrArr").toArray(new String[totalBreweries]);
+        //urls = extras.getStringArrayList("urlArr").toArray(new String[totalBreweries]);
+        //listDOMid = extras.getStringArrayList("listArr").toArray(new String[totalBreweries]);
+        //listContainer = extras.getStringArrayList("contArr").toArray(new String[totalBreweries]);
+        //listSecondary = extras.getStringArrayList("secArr").toArray(new String[totalBreweries]);
+        iconAssets = extras.getStringArrayList("iconArr").toArray(new String[totalBreweries]);
+        lats = extras.getDoubleArray("latArr");
+        longs = extras.getDoubleArray("longArr");
+        beers = extras.getStringArrayList("beerArr").toArray(new String[totalBreweries]);
+
+        String[] arraySpinner = new String[] {
+                "All Beer Styles",
+                "Wheat Ale",
+                "Lager/Pilsner",
+                "Pale Ale/IPA",
+                "Best Bitter/ESB",
+                "Belgian Ale",
+                "Amber Ale",
+                "Brown Ale",
+                "Porter/Stout"
+        };
+
+        Spinner s = (Spinner) findViewById(R.id.style_filter);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, arraySpinner);
+        s.setAdapter(adapter);
+        s.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void run() {
-                try {
-                    super.run();
-                    sleep(1000);  //Delay of 10 seconds
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-
-                    Intent i = new Intent(MapsActivity.this,
-                            Splash.class);
-                    startActivity(i);
-                    finish();
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                switch (position) {
+                    case 0:
+                        for (Marker marker: markers) {
+                            marker.setVisible(true);
+                        }
+                        break;
+                    case 1:
+                        showOnlyStyle(wheatTerms);
+                        break;
+                    case 2:
+                        showOnlyStyle(lagerTerms);
+                        break;
+                    case 3:
+                        showOnlyStyle(paleTerms);
+                        break;
+                    case 4:
+                        showOnlyStyle(bitterTerms);
+                        break;
+                    case 5:
+                        showOnlyStyle(belgianTerms);
+                        break;
+                    case 6:
+                        showOnlyStyle(amberTerms);
+                        break;
+                    case 7:
+                        showOnlyStyle(brownTerms);
+                        break;
+                    case 8:
+                        showOnlyStyle(porterTerms);
                 }
             }
-        };
-        welcomeThread.start();*/
 
-        scrapeThread.start();
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {
+                for (Marker marker: markers) {
+                    marker.setVisible(true);
+                }
+            }
+        });
 
         setUpMapIfNeeded();
     }
@@ -91,7 +142,12 @@ public class MapsActivity extends FragmentActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
         setUpMapIfNeeded();
+    }
+
+    public void onResetClick(View v) {
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latAvg, longAvg), zoom));
     }
 
     /**
@@ -122,158 +178,34 @@ public class MapsActivity extends FragmentActivity {
         }
     }
 
-    private String[] breweries = {  "Powell Street Craft Brewery",  "Strange Fellows Brewing",  "Parallel 49 Brewing",  "Storm Brewing", "Bomber Brewing"   };
-    private String[] addresses = {  "1357 Powell Street, Vancouver",           "1345 Clark Drive, Vancouver",         "1950 Triumph Street, Vancouver",  "310 Commercial Drive, Vancouver", "1488 Adanac Street, Vancouver"};
-    private String[] urls = {"http://www.powellbeer.com/?_escaped_fragment_=beers/cee5", "http://strangefellowsbrewing.com/", "http://parallel49brewing.com/beers/", "http://www.stormbrewing.org/?_escaped_fragment_=thebeers/csgz", "http://www.bomberbrewing.com/beers#brewery-54"};
-    private String[] listDOMid = {  "#i325kxr3",                    "#beers",                    "div.always_around", "#i4nv7xib", "div.view-brewery"};
-    private String[] listContainer = {"li",                         "div.beer > div.inner",      "div.beer-list > div.beer > h2", "p.font_8 > span > span", "div.views-row > div.node-beer > div.row-fluid > div.span8 > div.field-name-title"};
-    private String[] listSecondary = {"",                            "",                         "div.beer-list > div.beer > p.intro", "", ""};
-    private String[] iconAssets = {"pscb.png",                      "sf.png",                      "p49.png",   "storm.png", "bomber.png"};
+    private Marker[] markers;
 
-    private String[] beers = {"","","", "", ""};
-    private double[] lats = {0,0,0,0,0};
-    private double[] longs = {0,0,0,0,0};
+    private String[] breweries;
+    //private String[] addresses;
+    //private String[] urls;
+    //private String[] listDOMid;
+    //private String[] listContainer;
+    //private String[] listSecondary;
+    private String[] iconAssets;
+    private double[] lats;
+    private double[] longs;
+    private String[] beers;
 
-    private volatile boolean scrapeFinished = false;
+    public int totalBreweries;
 
-    final Object LOCK = new Object();
-
-    int totalBreweries = 4; //breweries.length
-
-    public JSONObject getLocationInfo(String address) {
-
-        address = address + ", BC, Canada";
-        address = address.replaceAll(" ","+");
-
-        HttpGet httpGet = new HttpGet("http://maps.googleapis.com/maps/api/geocode/json?address="+address+"&sensor=true");
-        HttpClient client = new DefaultHttpClient();
-        HttpResponse response;
-        StringBuilder stringBuilder = new StringBuilder();
-
-        try {
-            response = client.execute(httpGet);
-            HttpEntity entity = response.getEntity();
-            InputStream stream = entity.getContent();
-            int b;
-            while ((b = stream.read()) != -1) {
-                stringBuilder.append((char) b);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        JSONObject jsonObject = new JSONObject();
-        try {
-            jsonObject = new JSONObject(stringBuilder.toString());
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return jsonObject;
-    }
-
-    Thread scrapeThread = new Thread() {
-        public void run() {
-
-            for (int i = 0; i < totalBreweries; i++) {
-
-                //Log.v("iterator", "starting processing for brewery " + i);
-
-                Document document = null;
-                try {
-
-                    //Log.v("iterator", "trying to get coord for " + i);
-                    JSONObject ret = getLocationInfo(addresses[i]);
-
-                    JSONObject location;
-
-                    Double lat_val = 0.0;
-                    Double long_val = 0.0;
-
-                    try {
-                        location = ret.getJSONArray("results").getJSONObject(0).getJSONObject("geometry").getJSONObject("location");
-                        lat_val = location.getDouble("lat");
-                        long_val = location.getDouble("lng");
-                    } catch (JSONException e1) {
-                        e1.printStackTrace();
-                    }
-
-                    lats[i] = lat_val;
-                    longs[i] = long_val;
-
-                    //Log.v("iterator", "trying to get webpage for " + i);
-                    while (document==null) {
-                        document = Jsoup.connect(urls[i]).get();
-                    }
-
-                    //Log.v("iterator", "connection success for " + i);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                //Log.v("iterator", "asserting document for pointer " + i);
-                assert document != null;
-
-                //Log.v("dump", document.toString());
-
-                Elements listDOM = document.select(listDOMid[i]);
-                Elements beerDOMs = listDOM.select(listContainer[i]);
-                int j = 0;
-                Elements typeDOMs = null;
-                if (listSecondary[i].length() > 0) {
-                    typeDOMs = listDOM.select(listSecondary[i]);
-                }
-
-                String returnStr = "\n";
-
-                for( Element beerDOM : beerDOMs) {
-
-                    if (beerDOM.text().length() > 0) {
-                        returnStr += "\u2022 " + beerDOM.text();
-
-                        if (listSecondary[i].length() > 0) {
-                            assert typeDOMs != null;
-                            returnStr += " " + typeDOMs.get(j).text();
-                            j++;
-                        }
-                        returnStr += "\n";
-
-                        if (beerDOM.text().equals("BRAINSTORMS")) { // Bandage for Storm's website
-                            break;
-                        }
-                    }
-                }
-
-                while (returnStr.substring(returnStr.length() - 2).equals("\n")) {
-                    returnStr = returnStr.substring(0, returnStr.length() - 2);
-                }
-
-                beers[i] = returnStr;
-            }
-
-            scrapeFinished = true;
-            synchronized (LOCK) {
-                LOCK.notifyAll();
-            }
-        }
-    };
+    double latAvg;
+    double longAvg;
+    float zoom = 14.5f;
 
     private void setUpMap() {
 
         mMap.setInfoWindowAdapter(new MyInfoWindowAdapter());
 
-        double latAvg = 0.0;
-        double longAvg = 0.0;
-
-        synchronized (LOCK) {
-            while (!scrapeFinished) {
-                try { LOCK.wait(); }
-                catch (InterruptedException e) {
-                    break;
-                }
-            }
-        }
+        latAvg = 0.0;
+        longAvg = 0.0;
 
         for (int i = 0; i < totalBreweries; i++) {
-            mMap.addMarker(new MarkerOptions()
+            markers[i] = mMap.addMarker(new MarkerOptions()
                     .position(new LatLng(lats[i], longs[i]))
                     .title(breweries[i])
                     .snippet(beers[i])
@@ -284,6 +216,24 @@ public class MapsActivity extends FragmentActivity {
         latAvg = latAvg / totalBreweries;
         longAvg = longAvg / totalBreweries;
 
-        mMap.moveCamera( CameraUpdateFactory.newLatLngZoom(new LatLng(latAvg, longAvg), 14.5f) );
+        mMap.getUiSettings().setRotateGesturesEnabled(false);
+        mMap.moveCamera( CameraUpdateFactory.newLatLngZoom(new LatLng(latAvg, longAvg), zoom) );
+    }
+
+    private void showOnlyStyle(String[] termArr) {
+        for (Marker marker: markers) {
+            String snippet = marker.getSnippet();
+            boolean contains = false;
+            for (String term : termArr) {
+                if (snippet.toLowerCase().contains(term.toLowerCase())) {
+                    contains = true;
+                }
+            }
+            if (contains) {
+                marker.setVisible(true);
+            } else {
+                marker.setVisible(false);
+            }
+        }
     }
 }

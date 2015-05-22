@@ -4,6 +4,8 @@
     <string name="brewery_logo">brewery logo</string>
     <string name="title_activity_splash">SplashActivity</string>
 
+    <string name="reset">Reset</string>
+
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_main_blah">MainBlah</string>

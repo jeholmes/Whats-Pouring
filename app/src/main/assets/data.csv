@@ -1,0 +1,9 @@
+Powell Street Craft Brewery,Strange Fellows Brewing,Parallel 49 Brewing,Storm Brewing
+1357 Powell Street Vancouver,1345 Clark Drive Vancouver,1950 Triumph Street Vancouver,310 Commercial Drive Vancouver
+http://www.powellbeer.com/?_escaped_fragment_=beers/cee5,http://strangefellowsbrewing.com/,http://parallel49brewing.com/beers/,http://www.stormbrewing.org/?_escaped_fragment_=thebeers/csgz
+#i325kxr3,#beers,div.always_around,#i4nv7xib
+li,div.beer > div.inner,div.beer-list > div.beer > h2,p.font_8 > span > span
+,,div.beer-list > div.beer > p.intro,
+pscb.png,sf.png,p49.png,storm.png
+49.283354,49.27253,49.283682,49.282011
+-123.075853,-123.077839,-123.064379,-123.070231

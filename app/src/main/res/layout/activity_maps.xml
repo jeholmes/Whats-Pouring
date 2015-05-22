@@ -1,4 +1,30 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MapActivity">
+
 <fragment xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent" android:id="@+id/map" tools:context=".MapsActivity"
     android:name="com.google.android.gms.maps.SupportMapFragment" />
+
+        <Spinner
+            android:id="@+id/style_filter"
+            android:layout_width="wrap_content"
+            android:layout_height="25dp"
+            android:spinnerMode="dropdown"/>
+
+        <ImageButton
+            android:id="@+id/reset_button"
+            android:scaleType="fitCenter"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:layout_gravity="end"
+            android:padding="5dp"
+            android:onClick="onResetClick"
+            android:contentDescription="@string/reset"
+            android:src="@drawable/ic_menu_mylocation"
+/>
+
+</FrameLayout>
