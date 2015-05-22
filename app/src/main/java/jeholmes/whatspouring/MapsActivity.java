@@ -3,6 +3,7 @@ package jeholmes.whatspouring;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.view.View;
+
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
@@ -16,118 +17,114 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+/**
+ * Created by Jon on 11/05/2015.
+ * The main activity of the application. Loads google maps and populates the markers with the
+ * loaded data retrieved from the splash activity.
+ */
+
 public class MapsActivity extends FragmentActivity {
-
-    class MyInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
-
-        private final View myContentsView;
-
-        MyInfoWindowAdapter(){
-            myContentsView = getLayoutInflater().inflate(R.layout.windowlayout, null);
-        }
-
-        @Override
-        public View getInfoContents(Marker marker) {
-
-            TextView tvTitle = ((TextView)myContentsView.findViewById(R.id.title));
-            tvTitle.setText(marker.getTitle());
-            TextView tvSnippet = ((TextView)myContentsView.findViewById(R.id.snippet));
-            tvSnippet.setText(marker.getSnippet());
-
-            return myContentsView;
-        }
-
-        @Override
-        public View getInfoWindow(Marker marker) {
-            return null;
-        }
-    }
-
-
+    
+    // The google maps object
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
 
+    // Array to hold marker objects for map
+    private Marker[] markers;
+
+    // Variables for setting map camera
+    double latAvg;
+    double longAvg;
+    float zoom = 14.5f;
+
+    // String arrays to hold brewery information
+    private String[] breweries;
+    //private String[] addresses;
+    //private String[] urls;
+    private String[] iconAssets;
+    private double[] lats;
+    private double[] longs;
+    private String[] beers;
+
+    // String array to hold the beer styles for the filter drop down menu
+    private String[] arraySpinner = new String[] {
+            "All Beer Styles",
+            "Wheat Ale",
+            "Lager/Pilsner",
+            "Pale Ale/IPA",
+            "Best Bitter/ESB",
+            "Belgian Ale",
+            "Amber Ale",
+            "Brown Ale",
+            "Porter/Stout"
+    };
+
+    // String arrays of different terms for different beer styles
     private static String[] wheatTerms = {"wheat","hefeweizen","wit","blonde"};
-    private static String[] lagerTerms = {"lager","pilsner","kolsch","marzen","helles"};
-    private static String[] paleTerms = {"pale", "IPA", "india", "I.P.A"};
-    private static String[] bitterTerms = {"bitter", "ESB", "E.S.B"};
-    private static String[] belgianTerms = {"belgian", "saison", "dubbel", "tripel", "quad", "white"};
-    private static String[] amberTerms = {"amber", "ruby"};
-    private static String[] brownTerms = {"brown", "altbier", "classic"};
-    private static String[] porterTerms = {"porter", "stout"};
+    private static String[] lagerTerms = {"lager","pilsner","kolsch","k\u00F6lsch", "marzen",
+            "m\u00E4rzen","helles"};
+    private static String[] paleTerms = {"pale","india","IPA","I.P.A"};
+    private static String[] bitterTerms = {"bitter","ESB","E.S.B"};
+    private static String[] belgianTerms = {"belgian","saison","dubbel","tripel","quad","white"};
+    private static String[] amberTerms = {"amber","ruby"};
+    private static String[] brownTerms = {"brown","altbier","classic"};
+    private static String[] porterTerms = {"porter","stout"};
+
+    public int totalBreweries;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
+        // Extract extras from intent sent from splash loading activity
         Bundle extras = getIntent().getExtras();
 
+        // Set total amount of breweries loaded
         totalBreweries = extras.getInt("total");
 
+        // Initialize markers for map object
         markers = new Marker[totalBreweries];
 
+        // Extract the brewery information from the extras into the string arrays
         breweries = extras.getStringArrayList("nameArr").toArray(new String[totalBreweries]);
-        //addresses = extras.getStringArrayList("addrArr").toArray(new String[totalBreweries]);
+        //addresses = extras.getStringArrayList("addressArr").toArray(new String[totalBreweries]);
         //urls = extras.getStringArrayList("urlArr").toArray(new String[totalBreweries]);
-        //listDOMid = extras.getStringArrayList("listArr").toArray(new String[totalBreweries]);
-        //listContainer = extras.getStringArrayList("contArr").toArray(new String[totalBreweries]);
-        //listSecondary = extras.getStringArrayList("secArr").toArray(new String[totalBreweries]);
         iconAssets = extras.getStringArrayList("iconArr").toArray(new String[totalBreweries]);
         lats = extras.getDoubleArray("latArr");
         longs = extras.getDoubleArray("longArr");
         beers = extras.getStringArrayList("beerArr").toArray(new String[totalBreweries]);
 
-        String[] arraySpinner = new String[] {
-                "All Beer Styles",
-                "Wheat Ale",
-                "Lager/Pilsner",
-                "Pale Ale/IPA",
-                "Best Bitter/ESB",
-                "Belgian Ale",
-                "Amber Ale",
-                "Brown Ale",
-                "Porter/Stout"
-        };
-
+        // Initialize beer style filter drop down spinner
         Spinner s = (Spinner) findViewById(R.id.style_filter);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, arraySpinner);
         s.setAdapter(adapter);
         s.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
+            /** Spinner listener updates which markers are visible when a beer style is selected. */
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
                 switch (position) {
-                    case 0:
-                        for (Marker marker: markers) {
-                            marker.setVisible(true);
-                        }
-                        break;
-                    case 1:
-                        showOnlyStyle(wheatTerms);
-                        break;
-                    case 2:
-                        showOnlyStyle(lagerTerms);
-                        break;
-                    case 3:
-                        showOnlyStyle(paleTerms);
-                        break;
-                    case 4:
-                        showOnlyStyle(bitterTerms);
-                        break;
-                    case 5:
-                        showOnlyStyle(belgianTerms);
-                        break;
-                    case 6:
-                        showOnlyStyle(amberTerms);
-                        break;
-                    case 7:
-                        showOnlyStyle(brownTerms);
-                        break;
-                    case 8:
-                        showOnlyStyle(porterTerms);
+                    case 0: for (Marker marker: markers) { marker.setVisible(true); }
+                            break;
+                    case 1: showOnlyStyle(wheatTerms);
+                            break;
+                    case 2: showOnlyStyle(lagerTerms);
+                            break;
+                    case 3: showOnlyStyle(paleTerms);
+                            break;
+                    case 4: showOnlyStyle(bitterTerms);
+                            break;
+                    case 5: showOnlyStyle(belgianTerms);
+                            break;
+                    case 6: showOnlyStyle(amberTerms);
+                            break;
+                    case 7: showOnlyStyle(brownTerms);
+                            break;
+                    case 8: showOnlyStyle(porterTerms);
                 }
             }
 
+            // Default to showing all markers
             @Override
             public void onNothingSelected(AdapterView<?> parentView) {
                 for (Marker marker: markers) {
@@ -136,6 +133,7 @@ public class MapsActivity extends FragmentActivity {
             }
         });
 
+        // Run map setup process
         setUpMapIfNeeded();
     }
 
@@ -146,6 +144,7 @@ public class MapsActivity extends FragmentActivity {
         setUpMapIfNeeded();
     }
 
+    /** Listener method for the my location button, resets the camera to default. */
     public void onResetClick(View v) {
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latAvg, longAvg), zoom));
     }
@@ -178,62 +177,88 @@ public class MapsActivity extends FragmentActivity {
         }
     }
 
-    private Marker[] markers;
-
-    private String[] breweries;
-    //private String[] addresses;
-    //private String[] urls;
-    //private String[] listDOMid;
-    //private String[] listContainer;
-    //private String[] listSecondary;
-    private String[] iconAssets;
-    private double[] lats;
-    private double[] longs;
-    private String[] beers;
-
-    public int totalBreweries;
-
-    double latAvg;
-    double longAvg;
-    float zoom = 14.5f;
-
+    /** Method that handles the actual process of setting up all the map options. */
     private void setUpMap() {
 
+        // Set custom info window adapter definition
         mMap.setInfoWindowAdapter(new MyInfoWindowAdapter());
 
+        // Initialize average coordinates
         latAvg = 0.0;
         longAvg = 0.0;
 
+        // Create a marker for each brewery, add beer lists, set coordinates, and set icon
         for (int i = 0; i < totalBreweries; i++) {
             markers[i] = mMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(lats[i], longs[i]))
                     .title(breweries[i])
                     .snippet(beers[i])
+                    .position(new LatLng(lats[i], longs[i]))
                     .icon(BitmapDescriptorFactory.fromAsset(iconAssets[i])));
+
+            // Update average coordinate total
             latAvg += lats[i];
             longAvg += longs[i];
         }
+
+        // Divide average total by amount of breweries to get average coordinate
         latAvg = latAvg / totalBreweries;
         longAvg = longAvg / totalBreweries;
 
-        mMap.getUiSettings().setRotateGesturesEnabled(false);
+        // Set up camera to use the average coordinate as a center and the defined zoom
         mMap.moveCamera( CameraUpdateFactory.newLatLngZoom(new LatLng(latAvg, longAvg), zoom) );
+
+        // Disable two finger rotate gesture, unnecessary for app purposes
+        mMap.getUiSettings().setRotateGesturesEnabled(false);
     }
 
+    /** Method that handles showing/hiding the appropriate markers when a style is selected */
     private void showOnlyStyle(String[] termArr) {
         for (Marker marker: markers) {
+            // Extract the beer list from the marker
             String snippet = marker.getSnippet();
-            boolean contains = false;
+
+            // Initialize flag for if a term is found
+            boolean containsTerm = false;
+
+            // Check if the beer list contains any of the different terms for the style
             for (String term : termArr) {
                 if (snippet.toLowerCase().contains(term.toLowerCase())) {
-                    contains = true;
+                    containsTerm = true;
                 }
             }
-            if (contains) {
+
+            if (containsTerm) {
                 marker.setVisible(true);
             } else {
                 marker.setVisible(false);
             }
+        }
+    }
+
+    // Custom google maps marker info window sub class definition
+    class MyInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
+
+        private final View myContentsView;
+
+        MyInfoWindowAdapter(){
+            myContentsView = getLayoutInflater().inflate(R.layout.windowlayout, null);
+        }
+
+        @Override
+        public View getInfoContents(Marker marker) {
+
+            // Info windows consists of a title and a snippet that wrap content
+            TextView tvTitle = ((TextView)myContentsView.findViewById(R.id.title));
+            tvTitle.setText(marker.getTitle());
+            TextView tvSnippet = ((TextView)myContentsView.findViewById(R.id.snippet));
+            tvSnippet.setText(marker.getSnippet());
+
+            return myContentsView;
+        }
+
+        @Override
+        public View getInfoWindow(Marker marker) {
+            return null;
         }
     }
 }
