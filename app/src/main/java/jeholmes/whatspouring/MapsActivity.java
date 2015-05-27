@@ -34,7 +34,7 @@ public class MapsActivity extends FragmentActivity {
     // Variables for setting map camera
     double latAvg;
     double longAvg;
-    float zoom = 14.5f;
+    float zoom = 13.5f;
 
     // String arrays to hold brewery information
     private String[] breweries;
@@ -47,7 +47,7 @@ public class MapsActivity extends FragmentActivity {
 
     // String array to hold the beer styles for the filter drop down menu
     private String[] arraySpinner = new String[] {
-            "All Beer Styles",
+            "All Beers",
             "Wheat Ale",
             "Lager/Pilsner",
             "Pale Ale/IPA",
@@ -59,7 +59,7 @@ public class MapsActivity extends FragmentActivity {
     };
 
     // String arrays of different terms for different beer styles
-    private static String[] wheatTerms = {"wheat","hefeweizen","wit","blonde"};
+    private static String[] wheatTerms = {"wheat","hefeweizen","wit","blonde","weisse"};
     private static String[] lagerTerms = {"lager","pilsner","kolsch","k\u00F6lsch", "marzen",
             "m\u00E4rzen","helles"};
     private static String[] paleTerms = {"pale","india","IPA","I.P.A"};

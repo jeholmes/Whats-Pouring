@@ -175,6 +175,8 @@ public class Splash extends Activity implements Runnable {
             }
         }
 
+        //Log.v("page dump", document + "");
+
         // Extract DOMs that contain beer information
         Elements listDOM = document.select(listDOMid[i]);
         Elements beerDOMs = listDOM.select(listContainer[i]);
@@ -190,7 +192,7 @@ public class Splash extends Activity implements Runnable {
 
         // Iterate through DOMs and extract the text to construct a bullet point list as a string
         int j = 0;
-        for( Element beerDOM : beerDOMs) {
+        for (Element beerDOM : beerDOMs) {
             if (beerDOM.text().length() > 0) {
                 // Add a bullet point and the element's text to the return string
                 returnStr += "\u2022 " + beerDOM.text();
@@ -206,7 +208,9 @@ public class Splash extends Activity implements Runnable {
                 returnStr += "\n";
 
                 // Edge case for Storm Brewing, where "BRAINSTORMS" is the last relevant DOM
-                if (beerDOM.text().equals("BRAINSTORMS")) { break; }
+                if (beerDOM.text().equals("BRAINSTORMS")) {
+                    break;
+                }
             }
         }
 
